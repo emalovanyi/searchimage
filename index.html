@@ -1,0 +1,1132 @@
+<!DOCTYPE html>
+<html lang="sk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>GymBeam · Vyhľadávanie cez obrázok — Analýza + Prototyp</title>
+<style>
+:root{
+  --gb-orange:#ff6b00;
+  --gb-red:#ff3b1d;
+  --ink:#14181f;
+  --ink-2:#404a58;
+  --muted:#6c7787;
+  --line:#e7eaef;
+  --line-2:#eef1f5;
+  --bg:#f5f6f8;
+  --card:#ffffff;
+  --good:#12a150;
+  --warn:#c98a00;
+  --bad:#d63d2e;
+  --shadow:0 1px 2px rgba(20,24,31,.06),0 8px 24px rgba(20,24,31,.06);
+  --shadow-lg:0 12px 40px rgba(20,24,31,.14);
+  --r:14px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{
+  font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;
+  color:var(--ink);background:var(--bg);line-height:1.5;-webkit-font-smoothing:antialiased;
+}
+a{color:inherit;text-decoration:none}
+img{display:block;max-width:100%}
+
+/* ============ DOC SHELL ============ */
+.wrap{max-width:1180px;margin:0 auto;padding:0 22px}
+.doc-header{
+  background:linear-gradient(120deg,#14181f 0%,#232b38 60%,#2d3949 100%);
+  color:#fff;padding:54px 0 46px;position:relative;overflow:hidden;
+}
+.doc-header::after{
+  content:"";position:absolute;right:-80px;top:-60px;width:340px;height:340px;
+  background:radial-gradient(circle,rgba(255,107,0,.55),transparent 65%);filter:blur(6px);
+}
+.eyebrow{
+  display:inline-flex;align-items:center;gap:8px;font-size:12px;font-weight:700;
+  letter-spacing:.14em;text-transform:uppercase;color:var(--gb-orange);
+  background:rgba(255,107,0,.12);border:1px solid rgba(255,107,0,.3);
+  padding:6px 12px;border-radius:999px;margin-bottom:20px;
+}
+.eyebrow .dot{width:6px;height:6px;border-radius:50%;background:var(--gb-orange);box-shadow:0 0 0 4px rgba(255,107,0,.25)}
+.doc-header h1{font-size:clamp(28px,4.6vw,46px);line-height:1.06;font-weight:800;letter-spacing:-.02em;max-width:820px}
+.doc-header h1 em{font-style:italic;color:var(--gb-orange)}
+.doc-header p.lede{margin-top:16px;font-size:17px;color:#c3ccd8;max-width:660px}
+.meta-row{margin-top:28px;display:flex;flex-wrap:wrap;gap:10px}
+.meta-chip{font-size:12.5px;color:#d5dce6;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.13);padding:7px 13px;border-radius:999px}
+.meta-chip b{color:#fff;font-weight:700}
+
+/* ============ STICKY NAV ============ */
+.tocnav{
+  position:sticky;top:0;z-index:60;background:rgba(255,255,255,.86);
+  backdrop-filter:saturate(180%) blur(12px);border-bottom:1px solid var(--line);
+}
+.tocnav-inner{max-width:1180px;margin:0 auto;padding:0 22px;display:flex;gap:4px;overflow-x:auto;scrollbar-width:none}
+.tocnav-inner::-webkit-scrollbar{display:none}
+.tocnav a{
+  white-space:nowrap;font-size:13.5px;font-weight:600;color:var(--muted);
+  padding:15px 14px;border-bottom:2px solid transparent;transition:.15s;
+}
+.tocnav a:hover{color:var(--ink)}
+.tocnav a.active{color:var(--gb-orange);border-bottom-color:var(--gb-orange)}
+
+/* ============ SECTIONS ============ */
+section{padding:56px 0;border-bottom:1px solid var(--line)}
+.sec-head{margin-bottom:30px}
+.sec-num{font-size:13px;font-weight:800;letter-spacing:.16em;color:var(--gb-orange);text-transform:uppercase}
+.sec-head h2{font-size:clamp(23px,3vw,32px);font-weight:800;letter-spacing:-.02em;margin-top:8px;line-height:1.12}
+.sec-head p{margin-top:12px;color:var(--ink-2);font-size:16px;max-width:720px}
+
+/* ============ COMPETITOR CARDS ============ */
+.comp-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:16px}
+.comp-card{
+  background:var(--card);border:1px solid var(--line);border-radius:var(--r);
+  padding:22px;box-shadow:var(--shadow);position:relative;overflow:hidden;transition:.2s;
+}
+.comp-card:hover{transform:translateY(-3px);box-shadow:var(--shadow-lg)}
+.comp-card .accent{position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--gb-orange)}
+.comp-top{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:6px}
+.comp-name{font-size:19px;font-weight:800;letter-spacing:-.01em}
+.comp-feat{font-size:12.5px;font-weight:700;color:var(--gb-orange);background:rgba(255,107,0,.1);padding:4px 10px;border-radius:999px}
+.comp-cat{font-size:12.5px;color:var(--muted);margin-bottom:14px}
+.comp-desc{font-size:14.5px;color:var(--ink-2);margin-bottom:16px}
+.comp-tags{display:flex;flex-wrap:wrap;gap:7px}
+.comp-tag{font-size:11.5px;color:var(--ink-2);background:var(--line-2);padding:5px 10px;border-radius:8px;font-weight:600}
+.comp-where{display:inline-flex;align-items:center;gap:6px;font-size:12px;color:var(--muted);margin-top:14px;font-weight:600}
+.comp-where svg{width:14px;height:14px;stroke:var(--muted);fill:none;stroke-width:2}
+
+/* ============ CASE STUDIES ============ */
+.case-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:14px;margin-bottom:26px}
+.case{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:22px;box-shadow:var(--shadow)}
+.case .big{font-size:38px;font-weight:800;letter-spacing:-.03em;line-height:1;color:var(--gb-orange)}
+.case .big span{font-size:20px}
+.case .brand{font-size:15px;font-weight:800;margin-top:12px}
+.case .kind{font-size:12px;color:var(--muted);margin-top:2px}
+.case .note{font-size:13px;color:var(--ink-2);margin-top:10px}
+.case.retention .big{color:#6d5bd0}
+.case.returns .big{color:var(--good)}
+.case-src{display:inline-flex;align-items:center;gap:7px;margin-top:14px;font-size:12px;font-weight:700;color:var(--gb-orange);border-top:1px solid var(--line-2);padding-top:12px;width:100%}
+.case-src:hover{text-decoration:underline}
+.case-src svg{width:14px;height:14px;stroke:var(--gb-orange);fill:none;stroke-width:2;flex-shrink:0}
+
+.callout{
+  background:linear-gradient(180deg,#fff,#fffaf5);border:1px solid #ffe0c2;
+  border-left:4px solid var(--gb-orange);border-radius:var(--r);padding:22px 24px;box-shadow:var(--shadow);
+}
+.callout h3{font-size:16px;font-weight:800;display:flex;align-items:center;gap:9px;margin-bottom:10px}
+.callout h3 svg{width:19px;height:19px;stroke:var(--gb-orange);fill:none;stroke-width:2}
+.callout p{font-size:14.5px;color:var(--ink-2)}
+.callout p+p{margin-top:9px}
+.dresschallenge{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:16px}
+.dc-box{border:1px solid var(--line);border-radius:12px;padding:16px;background:#fff}
+.dc-box .lbl{font-size:11.5px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.dc-box .t{font-size:26px;font-weight:800;margin-top:6px;letter-spacing:-.02em}
+.dc-box.text .t{color:var(--bad)}
+.dc-box.visual .t{color:var(--good)}
+.dc-box .s{font-size:12.5px;color:var(--muted);margin-top:4px}
+
+.warn-box{margin-top:18px;background:#fffbee;border:1px solid #f5e4a8;border-radius:12px;padding:16px 18px;font-size:13.5px;color:#6b5600}
+.warn-box b{color:#463900}
+
+/* ============ EFFORT / IMPACT ============ */
+.ei-layout{display:grid;grid-template-columns:1.15fr .85fr;gap:22px;align-items:start}
+.ei-matrix{
+  background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:22px;box-shadow:var(--shadow);
+}
+.matrix{position:relative;aspect-ratio:1/.82;border-left:2px solid var(--line);border-bottom:2px solid var(--line);margin:34px 0 8px 26px}
+.matrix .axis-y{position:absolute;left:-26px;top:50%;transform:rotate(-90deg) translateX(50%);transform-origin:left;font-size:11px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);white-space:nowrap}
+.matrix .axis-x{position:absolute;bottom:-26px;left:50%;transform:translateX(-50%);font-size:11px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.quad{position:absolute;width:50%;height:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#aab3c0;text-align:center;padding:6px}
+.quad.tl{top:0;left:0;background:rgba(18,161,80,.05)}
+.quad.tr{top:0;left:50%;background:rgba(201,138,0,.05)}
+.quad.bl{top:50%;left:0;background:rgba(108,119,135,.04)}
+.quad.br{top:50%;left:50%;background:rgba(214,61,46,.05)}
+.node{position:absolute;transform:translate(-50%,50%);z-index:3}
+.node .bubble{
+  width:64px;height:64px;border-radius:50%;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  color:#fff;font-weight:800;box-shadow:0 6px 16px rgba(20,24,31,.22);border:3px solid #fff;cursor:default;
+}
+.node .bubble small{font-size:9px;font-weight:700;opacity:.9;text-transform:uppercase;letter-spacing:.04em}
+.node .bubble b{font-size:15px;letter-spacing:-.02em}
+.node .tag{position:absolute;top:-22px;left:50%;transform:translateX(-50%);white-space:nowrap;font-size:11px;font-weight:700;color:var(--ink);background:#fff;border:1px solid var(--line);padding:2px 8px;border-radius:7px;box-shadow:var(--shadow)}
+.node.app .bubble{background:var(--gb-orange)}
+.node.web .bubble{background:#3b82f6}
+
+.ei-side{display:flex;flex-direction:column;gap:14px}
+.effort-card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:20px;box-shadow:var(--shadow)}
+.effort-card .h{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px}
+.effort-card .h .name{font-size:16px;font-weight:800}
+.effort-card .h .md{font-size:12.5px;font-weight:800;color:#fff;background:var(--ink);padding:4px 10px;border-radius:999px}
+.effort-card.app .h .md{background:var(--gb-orange)}
+.effort-card.web .h .md{background:#3b82f6}
+.effort-card ul{list-style:none;margin-top:10px;display:flex;flex-direction:column;gap:7px}
+.effort-card li{font-size:13.5px;color:var(--ink-2);padding-left:20px;position:relative}
+.effort-card li::before{content:"";position:absolute;left:0;top:7px;width:8px;height:8px;border-radius:2px;background:var(--gb-orange)}
+.effort-card.web li::before{background:#3b82f6}
+.total-strip{display:flex;align-items:center;justify-content:space-between;background:var(--ink);color:#fff;border-radius:var(--r);padding:16px 20px}
+.total-strip .l{font-size:13px;color:#c3ccd8;font-weight:600}
+.total-strip .v{font-size:24px;font-weight:800;letter-spacing:-.02em}
+.total-strip .v span{color:var(--gb-orange)}
+
+/* ============ PROTOTYPE ============ */
+#prototype{background:#fff}
+.proto-controls{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:24px}
+.seg{display:inline-flex;background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:4px;gap:4px}
+.seg button{
+  border:none;background:transparent;font:inherit;font-size:13.5px;font-weight:700;color:var(--muted);
+  padding:9px 18px;border-radius:9px;cursor:pointer;display:flex;align-items:center;gap:8px;transition:.15s;
+}
+.seg button svg{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:2}
+.seg button.active{background:#fff;color:var(--ink);box-shadow:var(--shadow)}
+.seg button.active[data-view="app"]{color:var(--gb-orange)}
+.proto-hint{font-size:13px;color:var(--muted)}
+.proto-hint b{color:var(--ink)}
+
+.stage{display:flex;justify-content:center;padding:26px;background:linear-gradient(180deg,#f0f2f5,#e7eaef);border-radius:22px;border:1px solid var(--line);min-height:640px}
+
+/* ---- device frames ---- */
+.device{background:#fff;overflow:hidden;position:relative;transition:.3s}
+.device.desktop{width:100%;max-width:1000px;border-radius:14px;box-shadow:var(--shadow-lg);border:1px solid var(--line)}
+.device.phone{width:390px;border-radius:44px;box-shadow:0 20px 60px rgba(20,24,31,.28);border:11px solid #14181f;height:760px}
+.device.phone .notch{position:absolute;top:0;left:50%;transform:translateX(-50%);width:150px;height:26px;background:#14181f;border-radius:0 0 18px 18px;z-index:50}
+
+.screen{position:relative;height:100%;overflow-y:auto;overflow-x:hidden;background:#fff}
+.screen::-webkit-scrollbar{width:0}
+
+/* ---- promo bar (from screenshots) ---- */
+.promo{background:linear-gradient(90deg,var(--gb-red),var(--gb-orange));color:#fff;text-align:center;font-size:13px;padding:9px 34px;position:relative}
+.promo a{text-decoration:underline;font-weight:700}
+.promo .x{position:absolute;right:12px;top:50%;transform:translateY(-50%);opacity:.85;font-size:15px;cursor:pointer}
+.phone .promo{font-size:12px;line-height:1.35}
+
+/* ---- desktop header ---- */
+.dhead{padding:18px 30px 0;background:#fff}
+.dhead-row{display:flex;align-items:center;gap:22px}
+.gb-logo{font-size:23px;font-weight:800;font-style:italic;letter-spacing:-.5px;white-space:nowrap}
+.gb-logo .b{font-weight:900}
+.gb-logo sup{font-size:9px;font-style:normal;font-weight:700;top:-10px}
+.dsearch{flex:1;max-width:520px;margin:0 auto;position:relative}
+.dhead-icons{display:flex;align-items:center;gap:16px;color:#2b333f}
+.dhead-icons svg{width:22px;height:22px;stroke:#2b333f;fill:none;stroke-width:1.6;cursor:pointer}
+.cart-wrap{position:relative;display:flex;align-items:center;gap:8px}
+.cart-badge{position:absolute;top:-6px;left:14px;background:var(--gb-orange);color:#fff;font-size:10px;font-weight:800;width:17px;height:17px;border-radius:50%;display:flex;align-items:center;justify-content:center}
+.cart-price{font-size:14px;font-weight:700}
+.dnav{display:flex;gap:26px;padding:16px 0 15px;font-size:14px;font-weight:700;color:#2b333f}
+.dnav span{cursor:pointer;white-space:nowrap}
+.dnav span:hover{color:var(--gb-orange)}
+
+/* ---- search field ---- */
+.searchfield{
+  display:flex;align-items:center;gap:10px;border:2px solid #d7dce3;border-radius:999px;
+  padding:11px 16px;background:#fff;transition:.15s;cursor:text;
+}
+.searchfield.focus{border-color:var(--gb-orange);box-shadow:0 0 0 4px rgba(255,107,0,.1)}
+.searchfield svg.lens{width:19px;height:19px;stroke:#8a929e;fill:none;stroke-width:2;flex-shrink:0}
+.searchfield input{flex:1;border:none;outline:none;font:inherit;font-size:14px;background:transparent}
+.searchfield input::placeholder{color:#9aa2ae}
+/* the NEW camera trigger */
+.cam-btn{
+  flex-shrink:0;width:34px;height:34px;border-radius:50%;border:none;cursor:pointer;
+  background:linear-gradient(135deg,var(--gb-orange),#ff8a33);
+  display:flex;align-items:center;justify-content:center;position:relative;
+  box-shadow:0 3px 8px rgba(255,107,0,.35);transition:.18s;
+}
+.cam-btn:hover{transform:scale(1.08)}
+.cam-btn svg{width:18px;height:18px;stroke:#fff;fill:none;stroke-width:2}
+.cam-btn .pulse{position:absolute;inset:0;border-radius:50%;border:2px solid var(--gb-orange);animation:pulse 2s infinite}
+@keyframes pulse{0%{transform:scale(1);opacity:.7}100%{transform:scale(1.9);opacity:0}}
+.cam-btn .new{position:absolute;top:-9px;right:-14px;background:var(--ink);color:#fff;font-size:8px;font-weight:800;letter-spacing:.04em;padding:2px 5px;border-radius:5px}
+/* orange submit arrow — appears only when user typed something */
+.go-btn{
+  flex-shrink:0;width:34px;height:34px;border-radius:50%;border:none;cursor:pointer;
+  background:var(--gb-orange);display:none;align-items:center;justify-content:center;
+  box-shadow:0 3px 8px rgba(255,107,0,.35);transition:.15s;margin-left:2px;
+}
+.go-btn.show{display:flex;animation:pop .18s}
+.go-btn:hover{background:#e85f00}
+.go-btn svg{width:18px;height:18px;stroke:#fff;fill:none;stroke-width:2.4}
+/* when typing, hide the camera to mirror real GymBeam search behaviour */
+.searchfield.typing .cam-btn{display:none}
+/* mobile search row with external close X */
+.msearch-row{display:flex;align-items:center;gap:8px}
+.msearch-row .searchfield{flex:1}
+.msearch-close{
+  flex-shrink:0;width:38px;height:38px;border:none;background:transparent;cursor:pointer;
+  display:none;align-items:center;justify-content:center;
+}
+.msearch-close.show{display:flex}
+.msearch-close svg{width:22px;height:22px;stroke:#6c7787;fill:none;stroke-width:2}
+
+/* ---- suggest dropdown (matches screenshots) ---- */
+.suggest{
+  position:absolute;top:calc(100% + 8px);left:0;right:0;background:#fff;border-radius:14px;
+  box-shadow:var(--shadow-lg);border:1px solid var(--line);padding:16px;z-index:40;
+  display:none;
+}
+.suggest.show{display:block;animation:drop .18s ease}
+@keyframes drop{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:translateY(0)}}
+.sug-title{font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:#9aa2ae;margin:6px 2px 10px}
+.sug-chips{display:flex;flex-wrap:wrap;gap:9px;margin-bottom:6px}
+.sug-chip{font-size:13px;font-weight:600;background:#f1f3f6;border-radius:999px;padding:8px 15px;cursor:pointer;transition:.12s}
+.sug-chip:hover{background:#e6e9ee}
+.sug-recent{display:flex;align-items:center;gap:11px;padding:9px 2px;border-bottom:1px solid var(--line-2)}
+.sug-recent svg{width:16px;height:16px;stroke:#b3bac4;fill:none;stroke-width:2}
+.sug-recent .t{flex:1;font-size:14px;color:#404a58}
+.sug-recent .rm{color:#c2c8d1;font-size:16px;cursor:pointer}
+.sug-prod{display:flex;align-items:center;gap:12px;padding:9px 2px}
+.sug-prod .thumb{width:40px;height:40px;border-radius:8px;background:#f1f3f6;display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0}
+.sug-prod .pn{font-size:13.5px;font-weight:700;line-height:1.25}
+.sug-prod .pp{font-size:12.5px;color:var(--muted)}
+.sug-prod .pp b{color:var(--gb-orange)}
+.sug-cats{margin-bottom:6px}
+.sug-cat{font-size:15px;font-weight:700;color:var(--ink);padding:11px 2px;border-bottom:1px solid var(--line-2);cursor:pointer}
+.sug-cat:hover{color:var(--gb-orange)}
+/* the highlighted NEW row inside dropdown */
+.sug-visual{
+  display:flex;align-items:center;gap:12px;padding:13px 14px;margin:2px 0 12px;cursor:pointer;
+  background:linear-gradient(120deg,#fff5ec,#fff);border:1px dashed var(--gb-orange);border-radius:12px;transition:.15s;
+}
+.sug-visual:hover{background:#fff0e2}
+.sug-visual .ic{width:38px;height:38px;border-radius:10px;background:var(--gb-orange);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.sug-visual .ic svg{width:20px;height:20px;stroke:#fff;fill:none;stroke-width:2}
+.sug-visual .tt{font-size:14px;font-weight:800}
+.sug-visual .ss{font-size:12px;color:var(--muted)}
+.sug-visual .arr{margin-left:auto;color:var(--gb-orange);font-size:18px}
+
+/* ---- mobile header ---- */
+.mhead{padding:12px 16px 0;background:#fff}
+.mhead-row{display:flex;align-items:center;gap:14px}
+.burger{display:flex;flex-direction:column;gap:4px;cursor:pointer}
+.burger span{width:20px;height:2px;background:#2b333f;border-radius:2px}
+.mhead .gb-logo{font-size:20px;margin-right:auto}
+.mhead-icons{display:flex;align-items:center;gap:13px}
+.mhead-icons svg{width:21px;height:21px;stroke:#2b333f;fill:none;stroke-width:1.6}
+.mhead-icons .cart-wrap .cart-badge{left:12px}
+.msearch{padding:12px 16px 14px;background:#fff;position:relative}
+.mhero{position:relative;background:#14181f;color:#fff;padding:30px 18px 26px;overflow:hidden;min-height:230px}
+.mhero-bg{position:absolute;inset:0;background:radial-gradient(circle at 70% 30%,#3a2418,#14181f 70%);opacity:.9}
+.mhero h3{position:relative;font-size:30px;font-weight:900;letter-spacing:-.02em;line-height:.98}
+.mhero p{position:relative;font-size:13.5px;color:#c3ccd8;margin-top:8px;max-width:250px}
+.mtrust{display:flex;flex-direction:column}
+.mtrust-item{display:flex;align-items:center;gap:12px;padding:14px 18px;border-bottom:1px solid var(--line-2)}
+.mtrust-item svg{width:20px;height:20px;stroke:var(--ink);fill:none;stroke-width:1.8}
+.mtrust-item b{font-size:14px;display:block}
+.mtrust-item small{font-size:11.5px;color:var(--muted)}
+
+/* ---- desktop hero ---- */
+.dhero{position:relative;height:290px;background:linear-gradient(120deg,#f6dfe3,#f0cdd4);overflow:hidden;margin-top:2px}
+.dhero-txt{position:absolute;left:44px;top:50%;transform:translateY(-50%);z-index:2}
+.dhero-txt h3{font-size:44px;font-weight:900;color:#c17d88;letter-spacing:-.02em;line-height:.92}
+.dhero-txt h3 span{color:#fff}
+.dhero-prods{position:absolute;right:40px;bottom:0;display:flex;align-items:flex-end;gap:10px}
+.dhero-prod{width:70px;height:120px;background:#fff;border-radius:10px 10px 4px 4px;box-shadow:0 6px 18px rgba(0,0,0,.12);display:flex;align-items:flex-end;justify-content:center;font-size:26px;padding-bottom:12px}
+
+/* ============ UPLOAD SHEET / MODAL ============ */
+.vs-overlay{
+  position:absolute;inset:0;background:rgba(20,24,31,.5);backdrop-filter:blur(3px);
+  display:none;align-items:center;justify-content:center;z-index:200;padding:20px;
+}
+.vs-overlay.show{display:flex;animation:fade .2s}
+@keyframes fade{from{opacity:0}to{opacity:1}}
+.phone .vs-overlay{align-items:flex-end;padding:0}
+
+.vs-panel{
+  background:#fff;border-radius:20px;width:100%;max-width:460px;overflow:hidden;box-shadow:var(--shadow-lg);
+  animation:rise .25s cubic-bezier(.2,.8,.2,1);
+}
+.phone .vs-panel{max-width:none;border-radius:24px 24px 0 0;animation:sheet .3s cubic-bezier(.2,.8,.2,1)}
+@keyframes rise{from{opacity:0;transform:translateY(16px) scale(.97)}to{opacity:1;transform:none}}
+@keyframes sheet{from{transform:translateY(100%)}to{transform:translateY(0)}}
+.vs-head{display:flex;align-items:center;justify-content:space-between;padding:18px 20px;border-bottom:1px solid var(--line-2)}
+.vs-head .tt{display:flex;align-items:center;gap:10px;font-size:16px;font-weight:800}
+.vs-head .tt .badge{width:30px;height:30px;border-radius:9px;background:linear-gradient(135deg,var(--gb-orange),#ff8a33);display:flex;align-items:center;justify-content:center}
+.vs-head .tt .badge svg{width:17px;height:17px;stroke:#fff;fill:none;stroke-width:2}
+.vs-head .close{border:none;background:#f1f3f6;width:32px;height:32px;border-radius:50%;font-size:17px;cursor:pointer;color:#6c7787}
+.vs-body{padding:22px 20px 24px}
+
+/* dropzone (web) */
+.dropzone{
+  border:2px dashed #d0d6de;border-radius:16px;padding:38px 20px;text-align:center;cursor:pointer;transition:.18s;background:#fafbfc;
+}
+.dropzone:hover,.dropzone.drag{border-color:var(--gb-orange);background:#fff6ee}
+.dropzone .dz-ic{width:56px;height:56px;border-radius:16px;background:#fff0e2;display:flex;align-items:center;justify-content:center;margin:0 auto 14px}
+.dropzone .dz-ic svg{width:28px;height:28px;stroke:var(--gb-orange);fill:none;stroke-width:1.8}
+.dropzone .dz-t{font-size:15.5px;font-weight:800}
+.dropzone .dz-s{font-size:13px;color:var(--muted);margin-top:5px}
+.dz-or{text-align:center;font-size:12px;color:#aab2bd;margin:14px 0;position:relative}
+.dz-or::before,.dz-or::after{content:"";position:absolute;top:50%;width:38%;height:1px;background:var(--line)}
+.dz-or::before{left:0}.dz-or::after{right:0}
+.dz-paste{width:100%;border:1px solid var(--line);border-radius:11px;padding:12px;font:inherit;font-size:13.5px;outline:none}
+.dz-paste:focus{border-color:var(--gb-orange)}
+
+/* camera (mobile) */
+.cam-view{background:#14181f;border-radius:16px;overflow:hidden;position:relative;height:300px;display:flex;align-items:center;justify-content:center}
+.cam-view .live{position:absolute;inset:0;background:
+  radial-gradient(circle at 50% 42%,rgba(255,255,255,.06),transparent 60%),
+  linear-gradient(180deg,#1c2530,#0e1218);}
+.cam-frame{width:180px;height:180px;border-radius:20px;position:relative}
+.cam-frame span{position:absolute;width:26px;height:26px;border:3px solid #fff;opacity:.9}
+.cam-frame .tl{top:0;left:0;border-right:none;border-bottom:none;border-radius:8px 0 0 0}
+.cam-frame .tr{top:0;right:0;border-left:none;border-bottom:none;border-radius:0 8px 0 0}
+.cam-frame .bl{bottom:0;left:0;border-right:none;border-top:none;border-radius:0 0 0 8px}
+.cam-frame .br{bottom:0;right:0;border-left:none;border-top:none;border-radius:0 0 8px 0}
+.cam-scan{position:absolute;left:8%;right:8%;height:2px;background:linear-gradient(90deg,transparent,var(--gb-orange),transparent);top:20%;animation:scan 2.4s ease-in-out infinite;box-shadow:0 0 10px var(--gb-orange)}
+@keyframes scan{0%,100%{top:18%}50%{top:78%}}
+.cam-hint{position:absolute;bottom:16px;left:0;right:0;text-align:center;color:#fff;font-size:12.5px;opacity:.85}
+.cam-actions{display:flex;align-items:center;justify-content:center;gap:36px;margin-top:20px}
+.cam-side{display:flex;flex-direction:column;align-items:center;gap:5px;cursor:pointer;color:var(--ink-2);font-size:11px;font-weight:600}
+.cam-side svg{width:22px;height:22px;stroke:var(--ink-2);fill:none;stroke-width:1.8}
+.shutter{width:66px;height:66px;border-radius:50%;background:#fff;border:4px solid var(--gb-orange);cursor:pointer;transition:.12s;display:flex;align-items:center;justify-content:center}
+.shutter:active{transform:scale(.92)}
+.shutter .core{width:48px;height:48px;border-radius:50%;background:var(--gb-orange)}
+
+/* analyzing */
+.analyzing{text-align:center;padding:26px 10px}
+.anim-ring{width:88px;height:88px;margin:0 auto 20px;position:relative}
+.anim-ring .thumb-prev{width:88px;height:88px;border-radius:18px;object-fit:cover;background:#f1f3f6;display:flex;align-items:center;justify-content:center;font-size:38px}
+.anim-ring .spin{position:absolute;inset:-8px;border-radius:22px;border:3px solid transparent;border-top-color:var(--gb-orange);border-right-color:var(--gb-orange);animation:spin 1s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.analyzing .at{font-size:16px;font-weight:800;margin-bottom:4px}
+.analyzing .as{font-size:13px;color:var(--muted)}
+.detect-tags{display:flex;flex-wrap:wrap;gap:7px;justify-content:center;margin-top:16px;min-height:28px}
+.detect-tags .dt{font-size:11.5px;font-weight:700;background:#f1f3f6;color:var(--ink-2);padding:5px 11px;border-radius:999px;opacity:0;animation:pop .3s forwards}
+@keyframes pop{from{opacity:0;transform:scale(.8)}to{opacity:1;transform:scale(1)}}
+
+/* ============ RESULTS (CP) ============ */
+.results-head{padding:16px 18px;border-bottom:1px solid var(--line-2);display:flex;align-items:center;gap:14px;background:#fff;position:sticky;top:0;z-index:10}
+.results-head .back{border:none;background:#f1f3f6;width:34px;height:34px;border-radius:50%;cursor:pointer;font-size:16px;color:var(--ink);flex-shrink:0}
+.results-head .match-thumb{width:44px;height:44px;border-radius:11px;background:#fff0e2;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0;border:1px solid #ffe0c2}
+.results-head .rh-t{font-size:14px;font-weight:800;line-height:1.2}
+.results-head .rh-s{font-size:12px;color:var(--muted)}
+.results-head .rh-s b{color:var(--good)}
+.results-filters{display:flex;gap:8px;padding:12px 18px;overflow-x:auto;background:#fff;border-bottom:1px solid var(--line-2)}
+.results-filters::-webkit-scrollbar{display:none}
+.rf{white-space:nowrap;font-size:12.5px;font-weight:700;padding:7px 14px;border-radius:999px;border:1px solid var(--line);background:#fff;color:var(--ink-2);cursor:pointer;flex-shrink:0}
+.rf.active{background:var(--ink);color:#fff;border-color:var(--ink)}
+.results-note{padding:12px 18px;font-size:12.5px;color:var(--muted);background:#fafbfc}
+.results-note b{color:var(--ink)}
+
+.pgrid{display:grid;gap:14px;padding:18px}
+.desktop .pgrid{grid-template-columns:repeat(4,1fr)}
+.phone .pgrid{grid-template-columns:repeat(2,1fr)}
+.pcard{border:1px solid var(--line);border-radius:14px;overflow:hidden;background:#fff;cursor:pointer;transition:.18s;position:relative}
+.pcard:hover{box-shadow:var(--shadow);transform:translateY(-2px)}
+.pcard .pimg{aspect-ratio:1;background:linear-gradient(160deg,#f7f8fa,#eef1f5);display:flex;align-items:center;justify-content:center;font-size:44px;position:relative}
+.pcard .mscore{position:absolute;top:8px;left:8px;font-size:10.5px;font-weight:800;color:#fff;background:rgba(18,161,80,.92);padding:3px 8px;border-radius:999px}
+.pcard .fav{position:absolute;top:8px;right:8px;width:26px;height:26px;border-radius:50%;background:rgba(255,255,255,.9);display:flex;align-items:center;justify-content:center}
+.pcard .fav svg{width:14px;height:14px;stroke:#8a929e;fill:none;stroke-width:2}
+.pcard .pinfo{padding:11px 12px 13px}
+.pcard .pbrand{font-size:10px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;color:var(--gb-orange)}
+.pcard .pname{font-size:13px;font-weight:700;line-height:1.25;margin-top:3px;min-height:32px}
+.pcard .prow{display:flex;align-items:center;justify-content:space-between;margin-top:9px}
+.pcard .pprice{font-size:15px;font-weight:800}
+.pcard .pstars{font-size:11px;color:#f5a623}
+.pcard .add{width:100%;margin-top:10px;border:none;background:var(--gb-orange);color:#fff;font:inherit;font-size:12.5px;font-weight:800;padding:9px;border-radius:9px;cursor:pointer}
+.pcard .add:hover{background:#e85f00}
+
+/* toast */
+.toast{position:absolute;bottom:20px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--ink);color:#fff;font-size:13px;font-weight:600;padding:11px 18px;border-radius:11px;box-shadow:var(--shadow-lg);opacity:0;transition:.25s;z-index:300;pointer-events:none;display:flex;align-items:center;gap:8px}
+.toast svg{width:16px;height:16px;stroke:var(--good);fill:none;stroke-width:2.5}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+/* flow legend under prototype */
+.flow-legend{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-top:24px}
+.fl-step{background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:16px;position:relative}
+.fl-step .n{font-size:12px;font-weight:800;color:#fff;background:var(--gb-orange);width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;margin-bottom:9px}
+.fl-step .t{font-size:13.5px;font-weight:800}
+.fl-step .s{font-size:12px;color:var(--muted);margin-top:3px}
+
+/* ============ FOOTER ============ */
+.doc-foot{background:#14181f;color:#8a929e;padding:34px 0;font-size:13px}
+.doc-foot .wrap{display:flex;flex-wrap:wrap;gap:14px;align-items:center;justify-content:space-between}
+.doc-foot b{color:#fff}
+
+/* ============ RESPONSIVE ============ */
+@media(max-width:900px){
+  .ei-layout{grid-template-columns:1fr}
+  .dresschallenge{grid-template-columns:1fr}
+  .device.desktop{max-width:100%}
+}
+@media(max-width:640px){
+  section{padding:40px 0}
+  .stage{padding:14px 8px}
+  .device.phone{width:100%;max-width:360px;border-radius:38px}
+  .device.phone .pgrid{grid-template-columns:repeat(2,1fr)}
+  .comp-grid{grid-template-columns:1fr}
+  .doc-header{padding:38px 0 34px}
+}
+.hidden{display:none!important}
+</style>
+</head>
+<body>
+
+<!-- ============ TOC NAV ============ -->
+<div style="background:#14181f;color:#fff;padding:18px 0">
+  <div class="wrap" style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+    <span style="font-size:20px;font-weight:800;font-style:italic;letter-spacing:-.5px">Gym<span style="font-weight:900">Beam</span></span>
+    <span style="color:#3a4453">·</span>
+    <span style="font-size:16px;font-weight:700">Vyhľadávanie cez obrázok — analýza & prototyp</span>
+  </div>
+</div>
+<nav class="tocnav">
+  <div class="tocnav-inner" id="tocnav">
+    <a href="#competitors">01 · Konkurencia</a>
+    <a href="#cases">02 · Case studies</a>
+    <a href="#effort">03 · Effort vs Impact</a>
+    <a href="#prototype">04 · Prototyp</a>
+    <a href="#flow">05 · User flow</a>
+  </div>
+</nav>
+
+<!-- ============ 01 COMPETITORS ============ -->
+<section id="competitors">
+  <div class="wrap">
+    <div class="sec-head">
+      <div class="sec-num">01 — Konkurencia</div>
+      <h2>Kto už má vyhľadávanie fotkou a ako to má vyriešené</h2>
+      <p>Visual search zatiaľ nie je štandard u väčšiny e-shopov — má ho menšina, no adopcia rastie rýchlo (85 % maloobchodníkov plánuje nasadenie do 2027). Najsilnejšie riešenia sú v móde a bytovom dizajne, kde sa produkt ťažko opíše slovami.</p>
+    </div>
+    <div class="comp-grid">
+
+      <div class="comp-card">
+        <div class="accent"></div>
+        <div class="comp-top"><span class="comp-name">Amazon</span><span class="comp-feat">StyleSnap</span></div>
+        <div class="comp-cat">Globálny marketplace · od 2019</div>
+        <div class="comp-desc">Nahráš fotku oblečenia/doplnku a appka odporučí vizuálne podobné dostupné produkty. Integrované aj s Amazon Lens (skenovanie v obchode). Medziročný nárast vizuálnych vyhľadávaní +70 %.</div>
+        <div class="comp-tags"><span class="comp-tag">Upload z galérie</span><span class="comp-tag">Foto kamerou</span><span class="comp-tag">Skenovanie in-store</span></div>
+        <div class="comp-where"><svg viewBox="0 0 24 24"><rect x="5" y="2" width="14" height="20" rx="2"/></svg> Primárne v mobilnej app</div>
+      </div>
+
+      <div class="comp-card">
+        <div class="accent"></div>
+        <div class="comp-top"><span class="comp-name">Alibaba / AliExpress</span><span class="comp-feat">Image Search</span></div>
+        <div class="comp-cat">Wholesale + retail marketplace</div>
+        <div class="comp-desc">Ikona fotoaparátu priamo vo vyhľadávacom paneli. Funguje na desktope aj v app — nahráš obrázok a systém nájde vizuálne podobné položky od dodávateľov. Vlastný nástroj „Alibaba Lens".</div>
+        <div class="comp-tags"><span class="comp-tag">Kamera v search bare</span><span class="comp-tag">URL obrázka</span><span class="comp-tag">Screenshot zo sociálnych sietí</span></div>
+        <div class="comp-where"><svg viewBox="0 0 24 24"><rect x="2" y="4" width="20" height="14" rx="2"/><path d="M8 21h8"/></svg> Web aj app</div>
+      </div>
+
+      <div class="comp-card">
+        <div class="accent"></div>
+        <div class="comp-top"><span class="comp-name">eBay</span><span class="comp-feat">Image Search</span></div>
+        <div class="comp-cat">Marketplace</div>
+        <div class="comp-desc">Vstavané vyhľadávanie fotkou v mobilnej app — analyzované v akademickej štúdii na 1,5 mil. obrazových dopytov. Používatelia fotia telefónom alebo nahrávajú z knižnice.</div>
+        <div class="comp-tags"><span class="comp-tag">Foto kamerou</span><span class="comp-tag">Upload z galérie</span></div>
+        <div class="comp-where"><svg viewBox="0 0 24 24"><rect x="5" y="2" width="14" height="20" rx="2"/></svg> Mobilná app</div>
+      </div>
+
+      <div class="comp-card">
+        <div class="accent"></div>
+        <div class="comp-top"><span class="comp-name">ASOS</span><span class="comp-feat">Style Match</span></div>
+        <div class="comp-cat">Fashion e-commerce</div>
+        <div class="comp-desc">Nahráš fotku outfitu (aj screenshot zo sociálnej siete) a nájde vizuálne podobné kúsky z katalógu cez deep-learning matching. Používatelia Style Match sa o 75 % častejšie vrátili na stránku.</div>
+        <div class="comp-tags"><span class="comp-tag">Upload / screenshot</span><span class="comp-tag">Foto kamerou</span><span class="comp-tag">Fashion matching</span></div>
+        <div class="comp-where"><svg viewBox="0 0 24 24"><rect x="5" y="2" width="14" height="20" rx="2"/></svg> Mobilná app</div>
+      </div>
+
+      <div class="comp-card">
+        <div class="accent"></div>
+        <div class="comp-top"><span class="comp-name">IKEA</span><span class="comp-feat">Kreativ</span></div>
+        <div class="comp-cat">Nábytok / home</div>
+        <div class="comp-desc">AR sken miestnosti — skôr priestorové mapovanie než čistý image search, ale rovnaká logika „vidím → nájdem". Ukazuje smer, kam sa visual discovery posúva (multimodálne: obrázok + kontext).</div>
+        <div class="comp-tags"><span class="comp-tag">AR sken</span><span class="comp-tag">Foto priestoru</span></div>
+        <div class="comp-where"><svg viewBox="0 0 24 24"><rect x="5" y="2" width="14" height="20" rx="2"/></svg> Mobilná app (AR)</div>
+      </div>
+
+      <div class="comp-card">
+        <div class="accent"></div>
+        <div class="comp-top"><span class="comp-name">Google Lens / Pinterest</span><span class="comp-feat">Platform layer</span></div>
+        <div class="comp-cat">Cross-platform visual layer</div>
+        <div class="comp-desc">Google Lens spracuje ~20 mld. vizuálnych vyhľadávaní mesačne (4 mld. súvisí s nákupmi). Naučili spotrebiteľov, že „odfotiť a nájsť" je normálne — a tú istú funkciu teraz očakávajú aj na shope predajcu.</div>
+        <div class="comp-tags"><span class="comp-tag">Odfotiť čokoľvek</span><span class="comp-tag">Screenshot</span><span class="comp-tag">Price comparison</span></div>
+        <div class="comp-where"><svg viewBox="0 0 24 24"><rect x="2" y="4" width="20" height="14" rx="2"/><path d="M8 21h8"/></svg> Web aj app</div>
+      </div>
+
+    </div>
+    <div class="warn-box" style="margin-top:22px">
+      <b>Vzor pre nás:</b> každé silné riešenie dáva na mobile <b>foto kamerou</b> (rýchle, in-the-moment) a na webe <b>upload / screenshot</b>. Presne tak to riešime v prototype nižšie — web = len upload, mobile/app = aj odfotiť.
+    </div>
+  </div>
+</section>
+
+<!-- ============ 02 CASE STUDIES ============ -->
+<section id="cases">
+  <div class="wrap">
+    <div class="sec-head">
+      <div class="sec-num">02 — Case studies</div>
+      <h2>Aký reálny impact malo vyhľadávanie fotkou</h2>
+      <p>Vyberám len metriky, ktoré dávajú zmysel pre náš kontext (retencia a vratky) — nie konverzné čísla z módy, ktoré sa na fitness nutrition neprenášajú. Ku každej je link na zdroj.</p>
+    </div>
+
+    <div class="case-grid" style="grid-template-columns:repeat(auto-fit,minmax(280px,1fr))">
+      <div class="case retention">
+        <div class="big">75<span>%</span></div>
+        <div class="brand">ASOS Style Match</div>
+        <div class="kind">Fashion · Retencia</div>
+        <div class="note">Používatelia, čo použili vyhľadávanie fotkou (Style Match), sa o 75 % častejšie vrátili na stránku. Toto je pre nás najrelevantnejšia metrika — sedí na Q3 cieľ appky (opakované nákupy).</div>
+        <a class="case-src" href="https://www.taskmonk.ai/blogs/image-search-ecommerce" target="_blank" rel="noopener">
+          <svg viewBox="0 0 24 24"><path d="M10 13a5 5 0 007 0l3-3a5 5 0 00-7-7l-1 1"/><path d="M14 11a5 5 0 00-7 0l-3 3a5 5 0 007 7l1-1"/></svg>
+          Zdroj: taskmonk.ai — Image Search in E-Commerce
+        </a>
+      </div>
+      <div class="case returns">
+        <div class="big">22<span>%</span></div>
+        <div class="brand">Naprieč trhom</div>
+        <div class="kind">Benchmark · Menej vratiek</div>
+        <div class="note">Vyhľadávanie fotkou znižuje vratky o ~22 % — zákazník dostane presne to, čo videl na obrázku, takže menej sklamaní z „vyzerá inak". Priamy dopad na maržu a operatívu.</div>
+        <a class="case-src" href="https://www.envive.ai/post/visual-search-conversion-statistics" target="_blank" rel="noopener">
+          <svg viewBox="0 0 24 24"><path d="M10 13a5 5 0 007 0l3-3a5 5 0 00-7-7l-1 1"/><path d="M14 11a5 5 0 00-7 0l-3 3a5 5 0 007 7l1-1"/></svg>
+          Zdroj: envive.ai — Visual Search Statistics
+        </a>
+      </div>
+    </div>
+
+    <div class="callout">
+      <h3><svg viewBox="0 0 24 24"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg> Najlepší dôkaz jednoducho: „The Dress Challenge"</h3>
+      <p>Vzali skupinu ľudí a dali im nájsť konkrétny produkt. Najprv len písaním do vyhľadávania, potom odfotením. Rozdiel bol obrovský:</p>
+      <div class="dresschallenge">
+        <div class="dc-box text">
+          <div class="lbl">Keď písali text</div>
+          <div class="t">Väčšina to vzdala</div>
+          <div class="s">Skoro nikto produkt nenašiel do 1,5 minúty. Kto uspel, hľadal aj 4–6 minút.</div>
+        </div>
+        <div class="dc-box visual">
+          <div class="lbl">Keď odfotili</div>
+          <div class="t">Našli za pár sekúnd</div>
+          <div class="s">Tí istí ľudia mali výsledok takmer okamžite. Žiadne premýšľanie nad kľúčovými slovami.</div>
+        </div>
+      </div>
+      <p style="margin-top:14px"><b>Prečo to platí pre nás:</b> presne toto je re-purchase scenár GymBeamu — zákazník má doma prázdnu dózu, nechce vypisovať presný názov a gramáž, len odfotí a doobjedná.</p>
+      <a class="case-src" href="https://www.netguru.com/blog/ecommerce-visual-search" target="_blank" rel="noopener" style="margin-top:10px">
+        <svg viewBox="0 0 24 24"><path d="M10 13a5 5 0 007 0l3-3a5 5 0 00-7-7l-1 1"/><path d="M14 11a5 5 0 00-7 0l-3 3a5 5 0 007 7l1-1"/></svg>
+        Zdroj: netguru.com — Ecommerce Visual Search (The Dress Challenge)
+      </a>
+    </div>
+
+    <div class="callout" style="margin-top:16px;background:linear-gradient(180deg,#fff,#f5faff);border-color:#c9e3ff;border-left-color:#3b82f6">
+      <h3 style="color:#3b82f6"><svg viewBox="0 0 24 24" style="stroke:#3b82f6"><path d="M12 2v20M2 12h20"/></svg> Čo z toho platí pre GymBeam</h3>
+      <p>Fitness nutrition je iný prípad než móda — „Whey 100 čokoláda 1 kg" sa hľadá rýchlo aj textom. <b>Preto to nepredávame ako konverzný booster,</b> ale ako <b>retention / convenience feature pre vracajúcich sa zákazníkov</b>. Dva use-case, kde to reálne pomôže:</p>
+      <p>→ <b>Re-purchase:</b> zákazník odfotí prázdnu dózu doma → app nájde presný produkt na doobjednanie.<br>
+      → <b>Konkurenčný switch:</b> odfotí produkt konkurencie → nájde GymBeam ekvivalent.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 03 EFFORT VS IMPACT ============ -->
+<section id="effort">
+  <div class="wrap">
+    <div class="sec-head">
+      <div class="sec-num">03 — Effort vs Impact</div>
+      <h2>Náš odhad: 1 MD app + 1 MD web (spolu 2 MD)</h2>
+    </div>
+
+    <div class="ei-matrix" style="max-width:640px;margin:0 auto">
+      <div style="font-size:13px;font-weight:800;color:var(--muted);letter-spacing:.06em;text-transform:uppercase">Effort × Impact mapa</div>
+      <div class="matrix">
+        <div class="quad tl">Quick win<br>(vysoký impact / nízky effort)</div>
+        <div class="quad tr">Veľký projekt</div>
+        <div class="quad bl">Nice to have</div>
+        <div class="quad br">Zvážiť neskôr</div>
+        <span class="axis-y">Impact →</span>
+        <span class="axis-x">Effort →</span>
+        <!-- app: very low effort (1MD), higher impact -> top-left quadrant -->
+        <div class="node app" style="left:22%;bottom:66%">
+          <span class="tag">App · 1 MD</span>
+          <div class="bubble"><small>APP</small><b>1MD</b></div>
+        </div>
+        <!-- web: very low effort (1MD), lower impact -> left but lower -->
+        <div class="node web" style="left:30%;bottom:40%">
+          <span class="tag">Web · 1 MD</span>
+          <div class="bubble"><small>WEB</small><b>1MD</b></div>
+        </div>
+      </div>
+      <p style="font-size:12.5px;color:var(--muted);margin-top:14px">Obe sú <b>quick win</b> — nízky effort (1 MD každá) ako tenká vrstva nad existujúcim search infra. App má vyšší impact: sedí na Q3 cieľ (opakované nákupy) a mobil je prirodzené prostredie pre „odfotiť teraz". Web je nižší impact, ale lacný a drží konzistenciu.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 04 PROTOTYPE ============ -->
+<section id="prototype">
+  <div class="wrap">
+    <div class="sec-head">
+      <div class="sec-num">04 — Prototyp</div>
+      <h2>Ako by to vyzeralo v GymBeam UI</h2>
+      <p>Živý klikací mock v našej brand identite. Prepni medzi web a mobile/app view a klikni na oranžové tlačidlo kamery v search bare. Web = len nahrať fotku. Mobile/app = odfotiť aj nahrať.</p>
+    </div>
+
+    <div class="proto-controls">
+      <div class="seg" id="viewSeg">
+        <button data-view="web" class="active">
+          <svg viewBox="0 0 24 24"><rect x="2" y="4" width="20" height="14" rx="2"/><path d="M8 21h8"/></svg> Web view
+        </button>
+        <button data-view="app">
+          <svg viewBox="0 0 24 24"><rect x="5" y="2" width="14" height="20" rx="2"/><path d="M11 18h2"/></svg> Mobile / App
+        </button>
+      </div>
+      <span class="proto-hint">👆 Klikni na <b>oranžové tlačidlo kamery</b> v search paneli</span>
+    </div>
+
+    <div class="stage">
+      <!-- ======= DESKTOP DEVICE ======= -->
+      <div class="device desktop" id="deviceWeb">
+        <div class="screen" id="screenWeb">
+          <div class="promo">Doplnky pre vašu <a>žiarivú letnú pokožku</a> teraz so zľavou až 15 % <span class="x">✕</span></div>
+          <div class="dhead">
+            <div class="dhead-row">
+              <div class="gb-logo">Gym<span class="b">Beam</span><sup>®</sup></div>
+              <div class="dsearch">
+                <div class="searchfield" id="sfWeb">
+                  <svg class="lens" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4-4"/></svg>
+                  <input placeholder="Hľadajte v obchode..." id="inpWeb" autocomplete="off">
+                  <button class="cam-btn" id="camWeb" title="Vyhľadať cez obrázok">
+                    <span class="pulse"></span>
+                    <span class="new">NOVÉ</span>
+                    <svg viewBox="0 0 24 24"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg>
+                  </button>
+                  <button class="go-btn" id="goWeb" title="Vyhľadať">
+                    <svg viewBox="0 0 24 24"><path d="M5 12h14"/><path d="M13 6l6 6-6 6"/></svg>
+                  </button>
+                </div>
+                <!-- suggest dropdown -->
+                <div class="suggest" id="sugWeb">
+                  <div class="sug-visual" data-open-cam="web">
+                    <div class="ic"><svg viewBox="0 0 24 24"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg></div>
+                    <div><div class="tt">Vyhľadať cez obrázok</div><div class="ss">Nahraj fotku produktu a nájdeme podobné</div></div>
+                    <div class="arr">→</div>
+                  </div>
+                  <div class="sug-title">Populárne vyhľadávania</div>
+                  <div class="sug-chips">
+                    <span class="sug-chip">Kreatín Monohydrát</span><span class="sug-chip">Magnézium</span>
+                    <span class="sug-chip">Viaczložkové srvátkové proteíny</span><span class="sug-chip">Srvátkové koncentráty</span>
+                  </div>
+                  <div class="sug-title" style="margin-top:14px">Nedávne hľadania</div>
+                  <div class="sug-recent"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg><span class="t">kreatín</span><span class="rm">✕</span></div>
+                  <div class="sug-recent"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg><span class="t">bcaa</span><span class="rm">✕</span></div>
+                  <div class="sug-title" style="margin-top:14px">Najpredávanejšie</div>
+                  <div class="sug-prod"><div class="thumb">🥤</div><div><div class="pn">Just Whey Grass-Fed Protein – GymBeam</div><div class="pp">Od <b>1,30 €</b></div></div></div>
+                  <div class="sug-prod"><div class="thumb">🧃</div><div><div class="pn">MOXY daily+ 330 ml - GymBeam</div><div class="pp">Od <b>1,20 €</b></div></div></div>
+                </div>
+              </div>
+              <div class="dhead-icons">
+                <svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a7 7 0 0114 0v1"/></svg>
+                <svg viewBox="0 0 24 24"><path d="M20.8 5.6a5.5 5.5 0 00-7.8 0L12 6.6l-1-1a5.5 5.5 0 00-7.8 7.8l1 1L12 22l7.8-7.6 1-1a5.5 5.5 0 000-7.8z"/></svg>
+                <div class="cart-wrap">
+                  <svg viewBox="0 0 24 24"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 01-8 0"/></svg>
+                  <span class="cart-badge">5</span>
+                  <span class="cart-price">32,65 €</span>
+                </div>
+              </div>
+            </div>
+            <div class="dnav">
+              <span>POTRAVINY</span><span>PROTEÍNY</span><span>ŠPORTOVÁ VÝŽIVA</span><span>OBLEČENIE</span><span>PRÍSLUŠENSTVO</span><span>TOP PONUKY</span>
+            </div>
+          </div>
+          <div class="dhero">
+            <div class="dhero-txt"><h3>VAŠE LETNÉ<br>MUST-HAVES<br><span>PRE LETNÝ GLOW</span></h3></div>
+            <div class="dhero-prods">
+              <div class="dhero-prod">💊</div><div class="dhero-prod" style="height:150px">🫙</div>
+              <div class="dhero-prod">💊</div><div class="dhero-prod" style="height:135px">🧴</div>
+            </div>
+          </div>
+          <div style="padding:26px 30px;font-size:13px;color:var(--muted)">Zvyhľadaj cez obrázok kliknutím na oranžovú kameru vyššie ↑</div>
+        </div>
+
+        <!-- WEB overlay: upload modal -->
+        <div class="vs-overlay" id="ovWeb">
+          <div class="vs-panel" id="panelWeb">
+            <!-- state: upload -->
+            <div id="webUpload">
+              <div class="vs-head">
+                <div class="tt"><span class="badge"><svg viewBox="0 0 24 24"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg></span> Vyhľadať cez obrázok</div>
+                <button class="close" data-close="web">✕</button>
+              </div>
+              <div class="vs-body">
+                <div class="dropzone" id="dzWeb">
+                  <div class="dz-ic"><svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><path d="M17 8l-5-5-5 5"/><path d="M12 3v12"/></svg></div>
+                  <div class="dz-t">Presuň sem fotku alebo klikni na nahranie</div>
+                  <div class="dz-s">JPG, PNG do 10 MB · najlepšie čistý záber produktu</div>
+                </div>
+                <div class="dz-or">alebo</div>
+                <input class="dz-paste" placeholder="Vlož URL obrázka / screenshot z Ctrl+V" id="pasteWeb" readonly>
+                <p style="font-size:11.5px;color:#aab2bd;text-align:center;margin-top:14px">🔒 Na webe nie je fotoaparát — len nahranie súboru. Foto naživo je dostupné v mobilnej appke.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="toast" id="toastWeb"><svg viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg> Pridané do košíka</div>
+      </div>
+
+      <!-- ======= PHONE DEVICE ======= -->
+      <div class="device phone hidden" id="deviceApp">
+        <div class="notch"></div>
+        <div class="screen" id="screenApp">
+          <div class="promo">Doplnky pre vašu <a>žiarivú letnú pokožku</a> teraz so zľavou až 15 % <span class="x">✕</span></div>
+          <div class="mhead">
+            <div class="mhead-row">
+              <div class="burger"><span></span><span></span><span></span></div>
+              <div class="gb-logo">Gym<span class="b">Beam</span><sup>®</sup></div>
+              <div class="mhead-icons">
+                <svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a7 7 0 0114 0v1"/></svg>
+                <svg viewBox="0 0 24 24"><path d="M20.8 5.6a5.5 5.5 0 00-7.8 0L12 6.6l-1-1a5.5 5.5 0 00-7.8 7.8l1 1L12 22l7.8-7.6 1-1a5.5 5.5 0 000-7.8z"/></svg>
+                <div class="cart-wrap">
+                  <svg viewBox="0 0 24 24"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 01-8 0"/></svg>
+                  <span class="cart-badge">5</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="msearch">
+            <div class="msearch-row">
+              <div class="searchfield" id="sfApp">
+                <svg class="lens" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4-4"/></svg>
+                <input placeholder="Hľadajte v obchode..." id="inpApp" autocomplete="off">
+                <button class="cam-btn" id="camApp" title="Odfotiť / nahrať">
+                  <span class="pulse"></span>
+                  <span class="new">NOVÉ</span>
+                  <svg viewBox="0 0 24 24"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg>
+                </button>
+                <button class="go-btn" id="goApp" title="Vyhľadať">
+                  <svg viewBox="0 0 24 24"><path d="M5 12h14"/><path d="M13 6l6 6-6 6"/></svg>
+                </button>
+              </div>
+              <button class="msearch-close" id="closeSearchApp" title="Zatvoriť vyhľadávanie">
+                <svg viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg>
+              </button>
+            </div>
+            <div class="suggest" id="sugApp" style="left:16px;right:16px">
+              <div class="sug-visual" data-open-cam="app">
+                <div class="ic"><svg viewBox="0 0 24 24"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg></div>
+                <div><div class="tt">Odfotiť produkt</div><div class="ss">Namier kameru a nájdi podobné</div></div>
+                <div class="arr">→</div>
+              </div>
+              <div class="sug-title">Populárne vyhľadávania</div>
+              <div class="sug-chips">
+                <span class="sug-chip">Kreatín Monohydrát</span><span class="sug-chip">Magnézium</span><span class="sug-chip">Srvátkové koncentráty</span>
+              </div>
+              <div class="sug-title" style="margin-top:14px">Najpredávanejšie</div>
+              <div class="sug-prod"><div class="thumb">🥤</div><div><div class="pn">Just Whey Grass-Fed – GymBeam</div><div class="pp">Od <b>1,30 €</b></div></div></div>
+            </div>
+          </div>
+          <div class="mhero">
+            <div class="mhero-bg"></div>
+            <h3>OG1 KOLEKCIA</h3>
+            <p>Navrhnuté pre maximálny výkon. Bezšvové. Priedušné.</p>
+          </div>
+          <div class="mtrust">
+            <div class="mtrust-item"><svg viewBox="0 0 24 24"><path d="M20.8 5.6a5.5 5.5 0 00-7.8 0L12 6.6l-1-1a5.5 5.5 0 00-7.8 7.8L12 22l8.8-9.6a5.5 5.5 0 000-6.8z"/></svg><div><b>6M+</b><small>SPOKOJNÝCH ZÁKAZNÍKOV</small></div></div>
+            <div class="mtrust-item"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg><div><b>&lt;24 HODÍN</b><small>RÝCHLE DODANIE</small></div></div>
+            <div class="mtrust-item"><svg viewBox="0 0 24 24"><rect x="3" y="8" width="18" height="12" rx="2"/><path d="M3 8l3-5h12l3 5"/></svg><div><b>DOPRAVA ZADARMO</b><small>PRI NÁKUPE NAD 60 €</small></div></div>
+            <div class="mtrust-item"><svg viewBox="0 0 24 24"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><path d="M3 6h18"/></svg><div><b>9000+ PRODUKTOV</b><small>NAJŠIRŠÍ SORTIMENT SKLADOM</small></div></div>
+          </div>
+        </div>
+
+        <!-- APP overlay: camera sheet -->
+        <div class="vs-overlay" id="ovApp">
+          <div class="vs-panel" id="panelApp">
+            <div id="appCam">
+              <div class="vs-head">
+                <div class="tt"><span class="badge"><svg viewBox="0 0 24 24"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg></span> Odfotiť produkt</div>
+                <button class="close" data-close="app">✕</button>
+              </div>
+              <div class="vs-body">
+                <div class="cam-view">
+                  <div class="live"></div>
+                  <div class="cam-frame"><span class="tl"></span><span class="tr"></span><span class="bl"></span><span class="br"></span></div>
+                  <div class="cam-scan"></div>
+                  <div class="cam-hint">Namier na produkt alebo etiketu</div>
+                </div>
+                <div class="cam-actions">
+                  <div class="cam-side" id="galApp">
+                    <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
+                    Galéria
+                  </div>
+                  <div class="shutter" id="shutterApp"><div class="core"></div></div>
+                  <div class="cam-side">
+                    <svg viewBox="0 0 24 24"><path d="M23 4v6h-6M1 20v-6h6"/><path d="M3.5 9a9 9 0 0114.9-3.4L23 10M1 14l4.6 4.4A9 9 0 0020.5 15"/></svg>
+                    Prepnúť
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="toast" id="toastApp"><svg viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg> Pridané do košíka</div>
+      </div>
+    </div>
+
+    <!-- flow legend -->
+    <div class="flow-legend">
+      <div class="fl-step"><div class="n">1</div><div class="t">Vstup</div><div class="s">Klik na kameru v search bare (web) alebo v app.</div></div>
+      <div class="fl-step"><div class="n">2</div><div class="t">Získanie fotky</div><div class="s">Web: nahranie súboru. App: odfotenie alebo galéria.</div></div>
+      <div class="fl-step"><div class="n">3</div><div class="t">Analýza</div><div class="s">Systém rozpozná typ produktu a atribúty (embedding).</div></div>
+      <div class="fl-step"><div class="n">4</div><div class="t">Výsledky (CP)</div><div class="s">Redirect na kategóriu s vizuálne podobnými produktmi.</div></div>
+      <div class="fl-step"><div class="n">5</div><div class="t">Konverzia</div><div class="s">Add-to-cart priamo z výsledkov — repeat purchase.</div></div>
+    </div>
+  </div>
+</section>
+
+<footer class="doc-foot">
+  <div class="wrap">
+    <div>Interný podklad · <b>GymBeam Visual Search</b> · pripravil Yevhenii Malovanyi</div>
+    <div>Prototyp aj analýza sú demonštračné — čísla z case studies sú vendor-reported.</div>
+  </div>
+</footer>
+
+<script>
+/* ---------- view switch ---------- */
+const seg=document.getElementById('viewSeg');
+const devWeb=document.getElementById('deviceWeb');
+const devApp=document.getElementById('deviceApp');
+seg.addEventListener('click',e=>{
+  const b=e.target.closest('button'); if(!b)return;
+  seg.querySelectorAll('button').forEach(x=>x.classList.remove('active'));
+  b.classList.add('active');
+  const v=b.dataset.view;
+  devWeb.classList.toggle('hidden',v!=='web');
+  devApp.classList.toggle('hidden',v!=='app');
+});
+
+/* ---------- helpers ---------- */
+function openOverlay(id){document.getElementById(id).classList.add('show');}
+function closeOverlay(id){document.getElementById(id).classList.remove('show');}
+function showSuggest(id,on){document.getElementById(id).classList.toggle('show',on);}
+
+/* ---------- WEB + APP home binding (re-callable after Back) ---------- */
+function rebindHome(kind){
+  if(kind==='web'||kind==null){
+    const sf=document.getElementById('sfWeb');
+    const inp=document.getElementById('inpWeb');
+    const cam=document.getElementById('camWeb');
+    const go=document.getElementById('goWeb');
+    const open=()=>{sf.classList.add('focus');showSuggest('sugWeb',true);};
+    if(inp){inp.addEventListener('focus',open);inp.addEventListener('click',open);
+      inp.addEventListener('input',()=>{
+        const has=inp.value.trim().length>0;
+        sf.classList.toggle('typing',has);
+        if(go)go.classList.toggle('show',has);
+        showSuggest('sugWeb',true);
+        toggleCategories('sugWeb',has);
+      });
+      inp.addEventListener('keydown',e=>{if(e.key==='Enter'&&inp.value.trim())runTextSearch('web');});
+    }
+    if(cam)cam.addEventListener('click',e=>{e.stopPropagation();showSuggest('sugWeb',false);openOverlay('ovWeb');resetWeb();});
+    if(go)go.addEventListener('click',e=>{e.stopPropagation();if(inp.value.trim())runTextSearch('web');});
+    const sv=document.querySelector('[data-open-cam="web"]');
+    if(sv)sv.addEventListener('click',()=>{showSuggest('sugWeb',false);openOverlay('ovWeb');resetWeb();});
+    document.querySelectorAll('#screenWeb .promo .x').forEach(x=>x.addEventListener('click',e=>{e.stopPropagation();e.target.closest('.promo').style.display='none';}));
+  }
+  if(kind==='app'||kind==null){
+    const sf=document.getElementById('sfApp');
+    const inp=document.getElementById('inpApp');
+    const cam=document.getElementById('camApp');
+    const go=document.getElementById('goApp');
+    const closeX=document.getElementById('closeSearchApp');
+    const open=()=>{sf.classList.add('focus');showSuggest('sugApp',true);if(closeX)closeX.classList.add('show');};
+    if(inp){inp.addEventListener('focus',open);inp.addEventListener('click',open);
+      inp.addEventListener('input',()=>{
+        const has=inp.value.trim().length>0;
+        sf.classList.toggle('typing',has);
+        if(go)go.classList.toggle('show',has);
+        showSuggest('sugApp',true);
+        toggleCategories('sugApp',has);
+      });
+      inp.addEventListener('keydown',e=>{if(e.key==='Enter'&&inp.value.trim())runTextSearch('app');});
+    }
+    if(cam)cam.addEventListener('click',e=>{e.stopPropagation();showSuggest('sugApp',false);openOverlay('ovApp');resetApp();});
+    if(go)go.addEventListener('click',e=>{e.stopPropagation();if(inp.value.trim())runTextSearch('app');});
+    if(closeX)closeX.addEventListener('click',e=>{
+      e.stopPropagation();inp.value='';sf.classList.remove('focus','typing');
+      showSuggest('sugApp',false);closeX.classList.remove('show');
+      if(go)go.classList.remove('show');inp.blur();
+    });
+    const sv=document.querySelector('[data-open-cam="app"]');
+    if(sv)sv.addEventListener('click',()=>{showSuggest('sugApp',false);openOverlay('ovApp');resetApp();});
+    document.querySelectorAll('#screenApp .promo .x').forEach(x=>x.addEventListener('click',e=>{e.stopPropagation();e.target.closest('.promo').style.display='none';}));
+  }
+}
+/* show a KATEGÓRIE block inside dropdown once user types (matches real GymBeam) */
+function toggleCategories(sugId,on){
+  const sug=document.getElementById(sugId);
+  let cat=sug.querySelector('.sug-cats');
+  if(on){
+    if(!cat){
+      cat=document.createElement('div');cat.className='sug-cats';
+      cat.innerHTML='<div class="sug-title">Kategórie</div>'+
+        '<div class="sug-cat">Srvátkové proteíny</div>'+
+        '<div class="sug-cat">Kreatín</div>'+
+        '<div class="sug-cat">Vitamíny a minerály</div>';
+      sug.insertBefore(cat,sug.firstChild);
+    }
+  }else if(cat){cat.remove();}
+}
+rebindHome(); // initial bind for both
+
+/* close buttons + backdrop */
+document.querySelectorAll('.close').forEach(c=>c.addEventListener('click',()=>closeOverlay('ov'+cap(c.dataset.close))));
+['ovWeb','ovApp'].forEach(id=>{
+  document.getElementById(id).addEventListener('click',e=>{if(e.target.id===id)closeOverlay(id);});
+});
+function cap(s){return s.charAt(0).toUpperCase()+s.slice(1);}
+
+/* close suggest on outside click */
+document.addEventListener('click',e=>{
+  const sfW=document.getElementById('sfWeb');
+  const sfA=document.getElementById('sfApp');
+  if(!e.target.closest('.dsearch')){showSuggest('sugWeb',false);if(sfW)sfW.classList.remove('focus');}
+  if(!e.target.closest('.msearch')){showSuggest('sugApp',false);if(sfA)sfA.classList.remove('focus');}
+});
+
+/* ---------- reset panels ---------- */
+function resetWeb(){
+  document.getElementById('panelWeb').innerHTML=webUploadHTML;
+  bindWebUpload();
+}
+function resetApp(){
+  document.getElementById('panelApp').innerHTML=appCamHTML;
+  bindAppCam();
+}
+const webUploadHTML=document.getElementById('panelWeb').innerHTML;
+const appCamHTML=document.getElementById('panelApp').innerHTML;
+/* snapshot the original home screens so Back can restore them */
+const homeWebHTML=document.getElementById('screenWeb').innerHTML;
+const homeAppHTML=document.getElementById('screenApp').innerHTML;
+
+function bindWebUpload(){
+  const dz=document.querySelector('#panelWeb .dropzone');
+  const paste=document.querySelector('#panelWeb .dz-paste');
+  document.querySelector('#panelWeb .close').addEventListener('click',()=>closeOverlay('ovWeb'));
+  if(dz)dz.addEventListener('click',()=>runAnalyze('web'));
+  if(paste)paste.addEventListener('click',()=>runAnalyze('web'));
+}
+function bindAppCam(){
+  document.querySelector('#panelApp .close').addEventListener('click',()=>closeOverlay('ovApp'));
+  const sh=document.querySelector('#panelApp .shutter');
+  const gal=document.querySelector('#panelApp .cam-side');
+  if(sh)sh.addEventListener('click',()=>runAnalyze('app'));
+  if(gal)gal.addEventListener('click',()=>runAnalyze('app'));
+}
+
+/* ---------- ANALYZE state ---------- */
+const detected=['Proteín 🥤','Prášok','Dóza 1 kg','Čokoládová príchuť'];
+function runAnalyze(kind){
+  const panel=document.getElementById(kind==='web'?'panelWeb':'panelApp');
+  panel.innerHTML=`
+    <div class="vs-head">
+      <div class="tt"><span class="badge"><svg viewBox="0 0 24 24"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg></span> Analyzujeme fotku…</div>
+    </div>
+    <div class="vs-body">
+      <div class="analyzing">
+        <div class="anim-ring">
+          <div class="thumb-prev">🫙</div>
+          <div class="spin"></div>
+        </div>
+        <div class="at">Rozpoznávame produkt</div>
+        <div class="as">Hľadáme vizuálne podobné v katalógu…</div>
+        <div class="detect-tags" id="dtags"></div>
+      </div>
+    </div>`;
+  const box=panel.querySelector('#dtags');
+  detected.forEach((t,i)=>setTimeout(()=>{
+    const el=document.createElement('span');el.className='dt';el.textContent=t;box.appendChild(el);
+  },300+i*350));
+  setTimeout(()=>showResults(kind),2100);
+}
+
+/* ---------- TEXT SEARCH (arrow submit) — same loading, then results ---------- */
+function runTextSearch(kind){
+  const isApp=kind==='app';
+  const screen=document.getElementById(isApp?'screenApp':'screenWeb');
+  showSuggest(isApp?'sugApp':'sugWeb',false);
+  // full-screen loading using the SAME visual language as image search
+  const loader=document.createElement('div');
+  loader.className='inline-loader';
+  loader.innerHTML=`
+    <div class="analyzing" style="padding:60px 20px">
+      <div class="anim-ring"><div class="thumb-prev" style="font-size:28px">🔎</div><div class="spin"></div></div>
+      <div class="at">Vyhľadávame…</div>
+      <div class="as">Hľadáme produkty v katalógu</div>
+    </div>`;
+  Object.assign(loader.style,{position:'absolute',inset:'0',background:'#fff',zIndex:'120',display:'flex',alignItems:'center',justifyContent:'center'});
+  (isApp?document.getElementById('deviceApp'):document.getElementById('deviceWeb')).appendChild(loader);
+  setTimeout(()=>{loader.remove();showResults(kind);},1600);
+}
+
+/* ---------- RESULTS = CP with similar products ---------- */
+const products=[
+  {b:'GymBeam',n:'Whey Protein 100 – Čokoláda 1 kg',p:'24,95 €',s:'★★★★★',score:98,e:'🫙'},
+  {b:'GymBeam',n:'Just Whey Grass-Fed – Čokoláda 1 kg',p:'27,90 €',s:'★★★★☆',score:94,e:'🥤'},
+  {b:'BeastPink',n:'Protein Powder – Choco 900 g',p:'22,40 €',s:'★★★★★',score:91,e:'🧃'},
+  {b:'GymBeam',n:'Iso Whey Zero – Čoko 908 g',p:'32,50 €',s:'★★★★☆',score:88,e:'🫙'},
+  {b:'GymBeam',n:'Vegan Protein – Cacao 1 kg',p:'25,90 €',s:'★★★★☆',score:85,e:'🥛'},
+  {b:'GymBeam',n:'Real Whey – Double Choco 1 kg',p:'26,90 €',s:'★★★★★',score:83,e:'🫙'},
+  {b:'BeastPink',n:'Protein for Women – Choco 500 g',p:'18,90 €',s:'★★★★☆',score:79,e:'🧃'},
+  {b:'GymBeam',n:'Protein Milkshake – Čoko',p:'1,35 €',s:'★★★★☆',score:76,e:'🥤'},
+];
+function showResults(kind){
+  const isApp=kind==='app';
+  const panel=document.getElementById(isApp?'panelApp':'panelWeb');
+  const screen=document.getElementById(isApp?'screenApp':'screenWeb');
+  closeOverlay(isApp?'ovApp':'ovWeb');
+  const cards=products.map(p=>`
+    <div class="pcard" data-add>
+      <div class="pimg">${p.e}<span class="mscore">${p.score}% zhoda</span>
+        <span class="fav"><svg viewBox="0 0 24 24"><path d="M20.8 5.6a5.5 5.5 0 00-7.8 0L12 6.6l-1-1a5.5 5.5 0 00-7.8 7.8L12 22l8.8-9.6a5.5 5.5 0 000-6.8z"/></svg></span>
+      </div>
+      <div class="pinfo">
+        <div class="pbrand">${p.b}</div>
+        <div class="pname">${p.n}</div>
+        <div class="prow"><span class="pprice">${p.p}</span><span class="pstars">${p.s}</span></div>
+        <button class="add">Do košíka</button>
+      </div>
+    </div>`).join('');
+  screen.innerHTML=`
+    <div class="results-head">
+      <button class="back" id="backBtn">←</button>
+      <div class="match-thumb">🫙</div>
+      <div>
+        <div class="rh-t">Vizuálne podobné produkty</div>
+        <div class="rh-s"><b>8 zhôd</b> · rozpoznané: Proteín, prášok, čokoláda</div>
+      </div>
+    </div>
+    <div class="results-filters">
+      <span class="rf active">Všetko</span><span class="rf">Najlepšia zhoda</span><span class="rf">Najlacnejšie</span><span class="rf">GymBeam</span><span class="rf">BeastPink</span>
+    </div>
+    <div class="results-note">💡 Zoradené podľa <b>vizuálnej zhody</b> s tvojou fotkou. Toto je cieľová CP obrazovka po vyhľadaní.</div>
+    <div class="pgrid">${cards}</div>`;
+  screen.scrollTop=0;
+  document.getElementById('backBtn').addEventListener('click',()=>restoreHome(kind));
+  screen.querySelectorAll('[data-add] .add').forEach(btn=>btn.addEventListener('click',e=>{
+    e.stopPropagation();toast(isApp?'toastApp':'toastWeb');
+  }));
+  // filter chips are visual-only toggles
+  screen.querySelectorAll('.rf').forEach(f=>f.addEventListener('click',()=>{
+    screen.querySelectorAll('.rf').forEach(x=>x.classList.remove('active'));f.classList.add('active');
+  }));
+}
+function restoreHome(kind){
+  const isApp=kind==='app';
+  const screen=document.getElementById(isApp?'screenApp':'screenWeb');
+  screen.innerHTML=isApp?homeAppHTML:homeWebHTML;
+  screen.scrollTop=0;
+  rebindHome(kind);
+}
+function toast(id){
+  const t=document.getElementById(id);t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),1600);
+}
+
+/* ---------- TOC scrollspy ---------- */
+const links=[...document.querySelectorAll('#tocnav a')];
+const secs=links.map(l=>document.querySelector(l.getAttribute('href')));
+window.addEventListener('scroll',()=>{
+  let cur=secs.length-1;
+  for(let i=0;i<secs.length;i++){
+    if(secs[i].getBoundingClientRect().top>120){cur=i-1;break;}
+  }
+  links.forEach((l,i)=>l.classList.toggle('active',i===Math.max(0,cur)));
+},{passive:true});
+
+/* promo close */
+document.querySelectorAll('.promo .x').forEach(x=>x.addEventListener('click',e=>{e.stopPropagation();e.target.closest('.promo').style.display='none';}));
+</script>
+</body>
+</html>
