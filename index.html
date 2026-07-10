@@ -107,6 +107,12 @@ section{padding:56px 0;border-bottom:1px solid var(--line)}
 .case-src{display:inline-flex;align-items:center;gap:7px;margin-top:14px;font-size:12px;font-weight:700;color:var(--gb-orange);border-top:1px solid var(--line-2);padding-top:12px;width:100%}
 .case-src:hover{text-decoration:underline}
 .case-src svg{width:14px;height:14px;stroke:var(--gb-orange);fill:none;stroke-width:2;flex-shrink:0}
+.case.usecase{border-top:4px solid var(--gb-orange)}
+.case.usecase.outfit{border-top-color:#8B5CF6}
+.uc-ic{width:52px;height:52px;border-radius:14px;background:#fff0e2;display:flex;align-items:center;justify-content:center;margin-bottom:16px}
+.uc-ic svg{width:26px;height:26px;stroke:var(--gb-orange);fill:none;stroke-width:1.9}
+.case.outfit .uc-ic{background:#f1ecfe}
+.case.outfit .uc-ic svg{stroke:#8B5CF6}
 
 .callout{
   background:linear-gradient(180deg,#fff,#fffaf5);border:1px solid #ffe0c2;
@@ -470,7 +476,7 @@ section{padding:56px 0;border-bottom:1px solid var(--line)}
 <nav class="tocnav">
   <div class="tocnav-inner" id="tocnav">
     <a href="#competitors">01 · Konkurencia</a>
-    <a href="#cases">02 · Case studies</a>
+    <a href="#cases">02 · Use cases</a>
     <a href="#effort">03 · Effort vs Impact</a>
     <a href="#prototype">04 · Prototyp</a>
     <a href="#flow">05 · User flow</a>
@@ -552,31 +558,27 @@ section{padding:56px 0;border-bottom:1px solid var(--line)}
 <section id="cases">
   <div class="wrap">
     <div class="sec-head">
-      <div class="sec-num">02 — Case studies</div>
-      <h2>Aký reálny impact malo vyhľadávanie fotkou</h2>
-      <p>Vyberám len metriky, ktoré dávajú zmysel pre náš kontext (retencia a vratky) — nie konverzné čísla z módy, ktoré sa na fitness nutrition neprenášajú. Ku každej je link na zdroj.</p>
+      <div class="sec-num">02 — Use cases</div>
+      <h2>Na čo presne to zákazníkovi poslúži</h2>
+      <p>Dva silné scenáre, kde textové vyhľadávanie zlyháva a fotka funguje okamžite — presne to sú situácie, ktoré chceme podchytiť.</p>
     </div>
 
     <div class="case-grid" style="grid-template-columns:repeat(auto-fit,minmax(280px,1fr))">
-      <div class="case retention">
-        <div class="big">75<span>%</span></div>
-        <div class="brand">ASOS Style Match</div>
-        <div class="kind">Fashion · Retencia</div>
-        <div class="note">Používatelia, čo použili vyhľadávanie fotkou (Style Match), sa o 75 % častejšie vrátili na stránku. Toto je pre nás najrelevantnejšia metrika — sedí na Q3 cieľ appky (opakované nákupy).</div>
-        <a class="case-src" href="https://www.taskmonk.ai/blogs/image-search-ecommerce" target="_blank" rel="noopener">
-          <svg viewBox="0 0 24 24"><path d="M10 13a5 5 0 007 0l3-3a5 5 0 00-7-7l-1 1"/><path d="M14 11a5 5 0 00-7 0l-3 3a5 5 0 007 7l1-1"/></svg>
-          Zdroj: taskmonk.ai — Image Search in E-Commerce
-        </a>
+      <div class="case usecase">
+        <div class="uc-ic">
+          <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4-4"/><path d="M11 8v.01M11 11v3"/></svg>
+        </div>
+        <div class="brand">Nepozná názov produktu</div>
+        <div class="kind">Najsilnejší scenár</div>
+        <div class="note">Zákazník má doma dózu alebo produkt, ktorý mu niekto odporučil — ale nevie, ako sa presne volá ani akú má gramáž či príchuť. Nemá čo napísať do vyhľadávania. Odfotí ho (alebo nahrá fotku) a systém mu rovno ponúkne ten istý či najbližší produkt z katalógu. Ideálne na re-purchase.</div>
       </div>
-      <div class="case returns">
-        <div class="big">22<span>%</span></div>
-        <div class="brand">Naprieč trhom</div>
-        <div class="kind">Benchmark · Menej vratiek</div>
-        <div class="note">Vyhľadávanie fotkou znižuje vratky o ~22 % — zákazník dostane presne to, čo videl na obrázku, takže menej sklamaní z „vyzerá inak". Priamy dopad na maržu a operatívu.</div>
-        <a class="case-src" href="https://www.envive.ai/post/visual-search-conversion-statistics" target="_blank" rel="noopener">
-          <svg viewBox="0 0 24 24"><path d="M10 13a5 5 0 007 0l3-3a5 5 0 00-7-7l-1 1"/><path d="M14 11a5 5 0 00-7 0l-3 3a5 5 0 007 7l1-1"/></svg>
-          Zdroj: envive.ai — Visual Search Statistics
-        </a>
+      <div class="case usecase outfit">
+        <div class="uc-ic">
+          <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
+        </div>
+        <div class="brand">Chce nájsť outfit podľa vzoru</div>
+        <div class="kind">Oblečenie & doplnky</div>
+        <div class="note">Zákazník si niekde uložil inšpiráciu — napríklad poskladaný outfit z Pinterestu alebo screenshot z Instagramu. Nahrá tú fotku a systém nájde vizuálne podobné kúsky z našej ponuky oblečenia. Pomáha objaviť produkty, ktoré by textom nikdy nenašiel.</div>
       </div>
     </div>
 
@@ -595,7 +597,7 @@ section{padding:56px 0;border-bottom:1px solid var(--line)}
           <div class="s">Tí istí ľudia mali výsledok takmer okamžite. Žiadne premýšľanie nad kľúčovými slovami.</div>
         </div>
       </div>
-      <p style="margin-top:14px"><b>Prečo to platí pre nás:</b> presne toto je re-purchase scenár GymBeamu — zákazník má doma prázdnu dózu, nechce vypisovať presný názov a gramáž, len odfotí a doobjedná.</p>
+      <p style="margin-top:14px"><b>Prečo to platí pre nás:</b> presne toto sú oba scenáre vyššie — či už zákazník nepozná názov produktu, alebo má len obrázok outfitu. Písanie do vyhľadávania ho brzdí, fotka to vyrieši za sekundy.</p>
       <a class="case-src" href="https://www.netguru.com/blog/ecommerce-visual-search" target="_blank" rel="noopener" style="margin-top:10px">
         <svg viewBox="0 0 24 24"><path d="M10 13a5 5 0 007 0l3-3a5 5 0 00-7-7l-1 1"/><path d="M14 11a5 5 0 00-7 0l-3 3a5 5 0 007 7l1-1"/></svg>
         Zdroj: netguru.com — Ecommerce Visual Search (The Dress Challenge)
@@ -604,9 +606,7 @@ section{padding:56px 0;border-bottom:1px solid var(--line)}
 
     <div class="callout" style="margin-top:16px;background:linear-gradient(180deg,#fff,#f5faff);border-color:#c9e3ff;border-left-color:#3b82f6">
       <h3 style="color:#3b82f6"><svg viewBox="0 0 24 24" style="stroke:#3b82f6"><path d="M12 2v20M2 12h20"/></svg> Čo z toho platí pre GymBeam</h3>
-      <p>Fitness nutrition je iný prípad než móda — „Whey 100 čokoláda 1 kg" sa hľadá rýchlo aj textom. <b>Preto to nepredávame ako konverzný booster,</b> ale ako <b>retention / convenience feature pre vracajúcich sa zákazníkov</b>. Dva use-case, kde to reálne pomôže:</p>
-      <p>→ <b>Re-purchase:</b> zákazník odfotí prázdnu dózu doma → app nájde presný produkt na doobjednanie.<br>
-      → <b>Konkurenčný switch:</b> odfotí produkt konkurencie → nájde GymBeam ekvivalent.</p>
+      <p>Positioning nie je konverzný booster, ale <b>convenience & discovery feature</b>. Prvý use-case (nepozná názov) je najsilnejší pre doplnky a re-purchase, druhý (outfit) otvára oblečenie a doplnky — kategórie, kde textové vyhľadávanie funguje najhoršie.</p>
     </div>
   </div>
 </section>
